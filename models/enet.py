@@ -1,7 +1,9 @@
 import torch.nn as nn
 import torch
 
+# Class for the First Initial Block of the ENet
 class FirstBlock(nn.Module):
+    # Intialize the block
     def __init__(self, in_channels=3, out_channels=14):
         super(FirstBlock, self).__init__()
         self.threeXthree = nn.Conv2d(in_channels = in_channels, out_channels = 16 - in_channels, kernel_size = 3, stride=2, padding=1)
@@ -9,7 +11,7 @@ class FirstBlock(nn.Module):
         self.PReLU = nn.PReLU(num_parameters= 16)
         self.BatchNorm2D = nn.BatchNorm2d(num_features = 16)
         
-
+    # Forward function for Intial Block
     def forward(self, input):
         three_X_three = self.threeXthree(input)
         max_pool = self.max_pool(input)
@@ -18,6 +20,7 @@ class FirstBlock(nn.Module):
         result = self.PReLU(result)
         return result
 
+# Class for bottleneck when either downsampling or upsampling occurs
 class bottleneck_sample(nn.Module):
     def __init__(self, in_channels, out_channels, p, upsample = False, downsample = False):
         super(bottleneck_sample, self).__init__()
@@ -63,7 +66,8 @@ class bottleneck_sample(nn.Module):
             self.pool = nn.MaxUnpool2d(kernel_size = 2, stride = 2)
             self.spatial_conv = nn.Conv2d(in_channels, out_channels, kernel_size=1, bias=False)
             self.bn_spatial = nn.BatchNorm2d(out_channels)
-
+    
+    # Forward function for sample bottleneck
     def forward(self, input, indices=None, size=None):
         right_result = self.projection(input)
         if self.upsample:
@@ -95,7 +99,7 @@ class bottleneck_sample(nn.Module):
             return result, indices
         else:
             return result
-    
+# Class for regular bottleneck     
 class bottleneck(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size, p, asymmetry=False, dilation=1, padding=0):
         super(bottleneck, self).__init__()
@@ -130,6 +134,7 @@ class bottleneck(nn.Module):
         
         self.dp = nn.Dropout2d(p=p)
         self.finalPReLU = nn.PReLU()
+  
     def forward(self, input):
         result = self.projection(input)
         result = self.middle(result)
@@ -139,6 +144,7 @@ class bottleneck(nn.Module):
         result = self.finalPReLU(result)
         return result
 
+# Class to build actual ENet
 class enet(nn.Module):
     def __init__(self, in_channels, num_classes):
         super(enet, self).__init__()
